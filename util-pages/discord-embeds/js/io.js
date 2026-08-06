@@ -85,9 +85,16 @@ function serializeToJson() {
         footerText: e.footerText || null,
         imageUrl: e.imageUrl || null
     }));
-    const embedPart = output.length === 1 ? output[0] : output;
-    if (msgContent.trim()) {
-        return JSON.stringify({ content: msgContent, embeds: output }, null, 2);
-    }
-    return JSON.stringify(embedPart, null, 2);
+
+    const serializedButtons = buttons.map(b => b.style === 5
+        ? { style: b.style, label: b.label, url: b.url }
+        : { style: b.style, label: b.label, id: b.id }
+    );
+
+    const result = {};
+    if (msgContent.trim()) result.content = msgContent;
+    if (output.length > 0) result.embeds = output.length === 1 ? output[0] : output;
+    if (serializedButtons.length > 0) result.buttons = serializedButtons;
+
+    return JSON.stringify(result, null, 2);
 }

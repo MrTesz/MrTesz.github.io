@@ -30,6 +30,11 @@ function renderSidebar() {
 }
 
 function addEmbed() {
+    if (embeds.length >= 10) {
+        confirm("Du kannst nicht mehr als 10 Embeds hinzufügen")
+        return;
+    }
+
     embeds.push(defaultEmbed());
     selectEmbed(embeds.length - 1);
 

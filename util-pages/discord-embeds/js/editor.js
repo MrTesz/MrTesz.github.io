@@ -2,9 +2,9 @@ function renderEditorPanel() {
     const msgEditor = document.getElementById('msgEditor');
     const embedContent = document.getElementById('editorContent');
 
-    // Always show message section
     msgEditor.style.display = 'block';
     document.getElementById('msgContent').value = msgContent;
+    renderButtons();
 
     if (activeIdx === null) {
         embedContent.style.display = 'none';
@@ -135,6 +135,98 @@ function renderFields() {
         container.appendChild(btn);
     }
 }
+function updateField(fi, key, value) {
+    if (activeIdx === null) return;
+    embeds[activeIdx].fieldsJson[fi][key] = value;
+    renderPreview();
+
+    saveState();
+}
+function addField() {
+    if (activeIdx === null) return;
+    embeds[activeIdx].fieldsJson.push({ name: '', value: '', inline: false });
+    renderFields();
+    renderPreview();
+
+    saveState();
+}
+function removeField(fi) {
+    if (activeIdx === null) return;
+    embeds[activeIdx].fieldsJson.splice(fi, 1);
+    renderFields();
+    renderPreview();
+
+    saveState();
+}
+
+function renderButtons() {
+    const container = document.getElementById('buttonsList');
+    if (!container) return;
+    container.innerHTML = '';
+
+    buttons.forEach((b, bi) => {
+        const card = document.createElement('div');
+        card.className = 'field-card';
+        card.innerHTML = `
+            <div class="field-card-head">
+                <span>Button ${bi + 1}</span>
+                <button class="btn btn-danger-soft" style="padding:2px 7px;font-size:10px" onclick="removeButton(${bi})">✕</button>
+            </div>
+            <div class="field-row">
+                <div class="form-group" style="flex:1">
+                    <label>Label</label>
+                    <input type="text" placeholder="Klick mich" value="${esc(b.label)}" oninput="updateButton(${bi}, 'label', this.value)">
+                </div>
+                <div class="form-group" style="flex:0 0 100px">
+                    <label>Style</label>
+                    <select onchange="updateButton(${bi}, 'style', parseInt(this.value))">
+                        <option value="1" ${b.style===1?'selected':''}>Blau</option>
+                        <option value="2" ${b.style===2?'selected':''}>Grau</option>
+                        <option value="3" ${b.style===3?'selected':''}>Grün</option>
+                        <option value="4" ${b.style===4?'selected':''}>Rot</option>
+                        <option value="5" ${b.style===5?'selected':''}>Link</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>${b.style === 5 ? 'URL' : 'Custom ID'}</label>
+                <input type="text" placeholder="${b.style === 5 ? 'https://...' : 'mein-button-id'}"
+                    value="${esc(b.style === 5 ? (b.url||'') : (b.id||''))}"
+                    oninput="updateButton(${bi}, '${b.style === 5 ? 'url' : 'id'}', this.value)">
+            </div>
+        `;
+        container.appendChild(card);
+    });
+
+    const countEl = document.getElementById('btnCount');
+    if (countEl) countEl.textContent = `(${buttons.length}/5)`;
+
+    if (buttons.length < 5) {
+        const btn = document.createElement('button');
+        btn.className = 'btn-add-field';
+        btn.textContent = '＋ Button hinzufügen';
+        btn.onclick = addButton;
+        container.appendChild(btn);
+    }
+}
+function addButton() {
+    buttons.push({ id: '', label: '', style: 1, url: '' });
+    renderButtons();
+    renderPreview();
+    saveState();
+}
+function removeButton(bi) {
+    buttons.splice(bi, 1);
+    renderButtons();
+    renderPreview();
+    saveState();
+}
+function updateButton(bi, key, value) {
+    buttons[bi][key] = value;
+    if (key === 'style') renderButtons();
+    renderPreview();
+    saveState();
+}
 
 function updateMsg(val) {
     msgContent = val;
@@ -147,32 +239,6 @@ function update(key, value) {
     if (activeIdx === null) return;
     embeds[activeIdx][key] = value;
     renderSidebar();
-    renderPreview();
-
-    saveState();
-}
-
-function updateField(fi, key, value) {
-    if (activeIdx === null) return;
-    embeds[activeIdx].fieldsJson[fi][key] = value;
-    renderPreview();
-
-    saveState();
-}
-
-function addField() {
-    if (activeIdx === null) return;
-    embeds[activeIdx].fieldsJson.push({ name: '', value: '', inline: false });
-    renderFields();
-    renderPreview();
-
-    saveState();
-}
-
-function removeField(fi) {
-    if (activeIdx === null) return;
-    embeds[activeIdx].fieldsJson.splice(fi, 1);
-    renderFields();
     renderPreview();
 
     saveState();

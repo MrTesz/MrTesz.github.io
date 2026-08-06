@@ -21,15 +21,14 @@
 <div class="workspace">
     <aside class="sidebar">
         <div class="msg-item active" id="msgNavItem" onclick="selectMsg()">
-            <span class="msg-item-icon">💬</span>
-            <span class="msg-item-label">Message</span>
+            <span class="msg-item-label">Base</span>
         </div>
 
         <div style="padding: 6px 10px 2px; font-size:10px; font-weight:700; letter-spacing:0.08em; color:var(--text-dim); font-family:var(--font-mono),monospace; text-transform:uppercase;">Embeds</div>
         <div class="embed-list" id="embedList"></div>
 
         <div class="sidebar-footer">
-            <button class="btn-add" onclick="addEmbed()">＋ Embed hinzufügen</button>
+            <button class="btn-add" onclick="addEmbed()" id="btn-embed-add">+ Embed hinzufügen</button>
         </div>
     </aside>
 
@@ -41,7 +40,7 @@
         <div id="msgEditor">
             <div class="msg-section" id="msgSection">
                 <div class="msg-section-head" onclick="toggleSection('msgSection')">
-                    <span>💬 Nachricht</span>
+                    <span>Nachricht</span>
                     <span class="section-toggle">▾</span>
                 </div>
                 <div class="section-body">
@@ -51,6 +50,14 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <div class="section" id="sec-buttons">
+            <div class="section-head" onclick="toggleSection('sec-buttons')">
+                <span>Buttons <span id="btnCount" style="color:var(--text-dim);font-weight:400">(0/5)</span></span>
+                <span class="section-toggle">▾</span>
+            </div>
+            <div class="section-body" id="buttonsList"></div>
         </div>
 
         <div id="editorContent" style="display:none; flex-direction:column; gap:10px;"></div>

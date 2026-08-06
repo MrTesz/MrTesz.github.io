@@ -18,6 +18,7 @@ if (saved) {
     const data = JSON.parse(saved);
     embeds = data.embeds || [];
     msgContent = data.msgContent || '';
+    buttons = data.buttons || [];
 }
 
 renderAll();

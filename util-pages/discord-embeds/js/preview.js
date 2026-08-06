@@ -28,7 +28,7 @@ function renderPreview() {
     const nameRow = document.createElement('div');
     nameRow.className = 'dc-username-row';
     nameRow.innerHTML = `
-        <span class="dc-username">FossilSMP〢Argus</span>
+        <span class="dc-username">Discord</span>
         <span class="dc-bot-tag">BOT</span>
         <span class="dc-timestamp">Heute um ${new Date().toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'})}</span>`;
     body.appendChild(nameRow);
@@ -127,6 +127,20 @@ function renderPreview() {
         wrap.appendChild(eb);
         body.appendChild(wrap);
     });
+
+    if (buttons.length > 0) {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;';
+        const colors = { 1:'#5865f2', 2:'#4e5058', 3:'#248046', 4:'#da373c', 5:'#4e5058' };
+        buttons.forEach(b => {
+            const btn = document.createElement('button');
+            btn.textContent = b.label || 'Button';
+            btn.style.cssText = `background:${colors[b.style]};color:#fff;border:none;border-radius:4px;padding:6px 16px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit`;
+            if (b.style === 5 && b.url) btn.onclick = () => window.open(b.url, '_blank');
+            row.appendChild(btn);
+        });
+        body.appendChild(row);
+    }
 
     msg.appendChild(body);
     scroll.appendChild(msg);
