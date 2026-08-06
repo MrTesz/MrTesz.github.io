@@ -1,0 +1,128 @@
+:root {
+    --panel-text-color-large: #3a9188;
+    --panel-text-color-small: #44a99e;
+    --panel-title-text-color: #5959b3;
+    --panel-title-text-color-open: #49c6b9;
+    --panel-background-color: #232b54;
+}
+
+.expand-panel {
+    background-color: var(--panel-background-color);
+
+    /* position */
+    position: absolute;
+
+    width: 330px;
+    height: 57px;
+
+    margin: auto;
+    left: 0;
+    right: 0;
+    top: 45%;
+
+    border-radius: 100px;
+    padding: 15px 30px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+
+    transition: all 1s ease;
+}
+.expand-panel.expanded {
+    top: 30%;
+
+    width: 600px;
+    height: 200px;
+
+    padding: 30px 40px;
+}
+
+#expand-panel-title {
+    color: var(--panel-title-text-color);
+    font-size: 50px;
+    width: 100%;
+
+    transition: all 1s ease;
+}
+#expand-panel-title span {
+    opacity: 0;
+    animation: fadeInLetter 0.5s forwards;
+}
+.expand-panel.expanded #expand-panel-title {
+    color: var(--panel-title-text-color-open);
+}
+
+#expand-panel-info {
+    position: absolute;
+    top: 50%;
+    right: 2%;
+    transform: translateY(-50%);
+
+    width: 75px;
+    margin-left: 20px;
+
+    transition: all 1s ease;
+}
+#expand-panel-info:hover {
+    cursor: pointer;
+}
+#expand-panel-info.expanded {
+    top: 20%;
+    right: 30px;
+}
+
+#expand-panel-content {
+    display: none;
+    width: 100%;
+}
+#expand-panel-content.expanded  {
+    display: block;
+}
+
+#expand-panel-text {
+    opacity: 0%;
+    transition: opacity 1s ease;
+}
+#expand-panel-text.expanded-delayed {
+    opacity: 100%;
+}
+
+#expand-panel-list li:nth-child(1) { animation-delay: 0.2s; }
+#expand-panel-list li:nth-child(2) { animation-delay: 0.6s; }
+#expand-panel-list li:nth-child(3) { animation-delay: 1.0s; }
+#expand-panel-list li:nth-child(4) { animation-delay: 1.4s; }
+#expand-panel-list li:nth-child(5) { animation-delay: 1.8s; }
+#expand-panel-list li:nth-child(6) { animation-delay: 2.2s; }
+#expand-panel-list li:nth-child(7) { animation-delay: 2.6s; }
+
+#expand-panel-text {
+    color: var(--panel-text-color-small);
+    font-size: 20px;
+}
+.expand-panel-text-large {
+    font-size: 30px;
+}
+
+#expand-panel-socials {
+    text-align: right;
+    opacity: 0%;
+    transition: opacity 1s ease;
+}
+#expand-panel-socials.expanded-delayed {
+    opacity: 100%;
+}
+#expand-panel-socials svg {
+    position: absolute;
+    bottom: -5%;
+    right: 50%;
+}
+
+#expand-panel-social-github {
+    width: 40px;
+}
+
+@keyframes fadeInLetter {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}

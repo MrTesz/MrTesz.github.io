@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tesz' Item Browser</title>
+    <link rel="stylesheet" href="itemlist.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">Tesz' Item Browser</div>
+  <div class="subtitle">Minecraft · Vanilla + Custom Items</div>
+  <div class="controls">
+    <div class="search-wrap">
+      <input type="text" id="search" placeholder="Suche nach Item-Name oder ID...">
+    </div>
+    <select id="catFilter">
+      <option value="">Alle Kategorien</option>
+    </select>
+    <button class="toggle-custom" id="toggleCustom">Nur Custom</button>
+  </div>
+</header>
+
+<main>
+  <div class="stats" id="stats">
+    <span class="loading-pill">LOADING</span>
+  </div>
+  <div id="errorBanner"></div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<div id="toast">Kopiert!</div>
+
+<footer>
+  Klicke ein Item, um die ID zu kopieren &nbsp;·&nbsp; Texturen von https://mcasset.cloud
+  <br> 
+  <br>
+  Copyright &copy; 2026 Mr_Tesz. All rights reserved &nbsp;·&nbsp;
+  Not affiliated with Minecraft, Mojang or Microsoft.
+</footer>
+
+<script>
+  // ============================================================
+  // KONFIGURATION — hier anpassen
+  // ============================================================
+
+  const VANILLA_URL = "data/vanilla_items.json";
+  const CUSTOM_URL  = "data/custom_items.json";
+
+  // Lokale Texturen (relativ zur itemlist.html)
+  const TEXTURE_BASE = "data/textures/";
+
+  // Fallback-Bild wenn gar keine Textur gefunden wird
+  const IMG_NOT_FOUND = "data/img_not_found.png";
+
+  // mcasset.cloud Version — anpassen wenn nötig
+  const MC_VERSION    = "1.21.11";
+  const MCASSET_ITEM  = `https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/${MC_VERSION}/assets/minecraft/textures/item/`;
+  const MCASSET_BLOCK = `https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/${MC_VERSION}/assets/minecraft/textures/block/`;
+
+  // Kategorien für Vanilla-Items
+  const CATEGORY_RULES = [
+    { cat: "Waffen",    match: /sword|bow|crossbow|trident|arrow|shield|mace/ },
+    { cat: "Rüstung",   match: /helmet|chestplate|leggings|boots|elytra|turtle_helmet/ },
+    { cat: "Werkzeuge", match: /pickaxe|axe|shovel|hoe|shears|rod|flint_and_steel|compass|clock|spyglass|brush|lead|name_tag/ },
+    { cat: "Erze",      match: /ore|ingot|raw_|scrap|coal$|diamond$|emerald$|lapis|redstone$|quartz$|netherite|amethyst|debris/ },
+    { cat: "Essen",     match: /apple|bread|beef|chicken|porkchop|mutton|rabbit|fish|salmon|cod|cake|cookie|pie|stew|soup|honey|berries|carrot$|potato$|beetroot$|melon_slice|dried_kelp$|suspicious_stew/ },
+    { cat: "Redstone",  match: /redstone_torch|redstone_lamp|lever|button|pressure_plate|tripwire|observer|piston|dispenser|dropper|hopper|comparator|repeater|target|daylight|sculk_sensor/ },
+    { cat: "Natur",     match: /log|wood|leaves|sapling|seed|wheat$|carrot$|potato$|pumpkin|melon|cactus|lily_pad|vine|fern|bush|dandelion|poppy|orchid|sunflower|rose|azalea|flower|tulip|allium|bamboo|moss|grass|dirt|sand|gravel|mushroom|kelp|sea|coral|torchflower|pitcher|mangrove/ },
+    { cat: "Bau",       match: /planks|stone|brick|glass|wool|terracotta|concrete|slab|stair|wall|fence|gate|door|trapdoor|block|pillar|smooth|polished|chiseled|cut_|cobble|basalt|blackstone|deepslate|netherrack|nether_brick|end_stone|purpur|quartz|prismarine|sandstone|mud|packed|calcite|tuff|dripstone|amethyst_block|obsidian|bedrock|soul_sand|soul_soil|magma_block|crying|shroomlight|lodestone|respawn_anchor|beacon|conduit/ },
+  ];
+
+  function inferCategory(name) {
+    for (const rule of CATEGORY_RULES) {
+      if (rule.match.test(name)) return rule.cat;
+    }
+    return "Sonstiges";
+  }
+
+  // ============================================================
+  // BILD-FALLBACK-CHAIN
+  // 1. imageUrl aus JSON (wenn angegeben)
+  // 2. data/textures/name_texture.png  (lokal)
+  // 3. data/textures/name.png          (lokal)
+  // 4. mcasset.cloud/.../item/name.png (online, nur Vanilla)
+  // 5. mcasset.cloud/.../block/name.png(online, nur Vanilla)
+  // 6. data/img_not_found.png
+  // 7. Emoji-Fallback
+  // ============================================================
+  function buildImageElement(item, card) {
+    const wrap = document.createElement('div');
+    wrap.className = 'item-img-wrap';
+
+    const img = document.createElement('img');
+    img.alt = item.name;
+    img.loading = 'lazy';
+
+    const itemName = item.custom ? item.id.split(':').pop() : item.id;
+    const chain = [];
+
+    if (item.imageUrl) chain.push(item.imageUrl);
+    chain.push(TEXTURE_BASE + itemName + "_texture.png");
+    chain.push(TEXTURE_BASE + itemName + ".png");
+    if (!item.custom) {
+      chain.push(MCASSET_ITEM  + itemName + ".png");
+      chain.push(MCASSET_BLOCK + itemName + ".png");
+    }
+    chain.push(IMG_NOT_FOUND);
+
+    const chainUniq = [...new Set(chain)];
+    let chainIndex = 0;
+    img.src = chainUniq[chainIndex];
+
+    img.onerror = () => {
+      chainIndex++;
+      if (chainIndex < chainUniq.length) {
+        img.src = chainUniq[chainIndex];
+      } else {
+        wrap.remove();
+        const fb = document.createElement('div');
+        fb.className = 'item-img-fallback';
+        fb.textContent = item.emoji || '❓';
+        card.insertBefore(fb, card.querySelector('.item-name'));
+      }
+    };
+
+    wrap.appendChild(img);
+    return wrap;
+  }
+
+  // ============================================================
+  // STATE
+  // ============================================================
+  let allItems   = [];
+  let onlyCustom = false;
+
+  const grid        = document.getElementById('grid');
+  const searchInput = document.getElementById('search');
+  const catFilter   = document.getElementById('catFilter');
+  const toggleBtn   = document.getElementById('toggleCustom');
+  const statsEl     = document.getElementById('stats');
+  const errorBanner = document.getElementById('errorBanner');
+  const toast       = document.getElementById('toast');
+  let toastTimer;
+
+  // ============================================================
+  // LOAD DATA
+  // ============================================================
+  async function loadItems() {
+    const errors = [];
+
+    let vanillaItems = [];
+    try {
+      const res = await fetch(VANILLA_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      vanillaItems = data
+        .filter(item => item.name !== "air")
+        .map(item => ({
+          id:     item.name,
+          name:   item.displayName,
+          cat:    inferCategory(item.name),
+          imageUrl: item.imageUrl,
+          custom: false,
+        }));
+    } catch (e) {
+      errors.push(`vanilla_items.json konnte nicht geladen werden (${e.message}).<br>Liegt die Datei unter data/vanilla_items.json?`);
+    }
+
+    let customItems = [];
+    try {
+      const res = await fetch(CUSTOM_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      customItems = data.map(item => ({ ...item, custom: true }));
+    } catch (e) {
+      errors.push(`custom_items.json konnte nicht geladen werden (${e.message}).<br>Liegt die Datei unter data/custom_items.json?`);
+    }
+
+    if (errors.length > 0) {
+      errorBanner.innerHTML = errors
+        .map(e => `<div class="error-banner">&#9888; ${e}</div>`)
+        .join('');
+    }
+
+    allItems = [...vanillaItems, ...customItems];
+
+    const catSet = new Set();
+    allItems.forEach(i => {
+      (Array.isArray(i.cat) ? i.cat : [i.cat]).forEach(c => catSet.add(c));
+    });
+    [...catSet].sort().forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c; opt.textContent = c;
+      catFilter.appendChild(opt);
+    });
+
+    render();
+  }
+
+  // ============================================================
+  // RENDER
+  // ============================================================
+  function buildCard(item) {
+    const card = document.createElement('div');
+    card.className = 'item-card' + (item.custom ? ' is-custom' : '');
+
+    const copyId = item.custom ? item.id : `minecraft:${item.id}`;
+
+    if (item.custom) {
+      const badge = document.createElement('div');
+      badge.className = 'custom-badge';
+      badge.textContent = 'CUSTOM';
+      card.appendChild(badge);
+    }
+
+    card.appendChild(buildImageElement(item, card));
+
+    const name = document.createElement('div');
+    name.className = 'item-name';
+    name.textContent = item.name;
+    card.appendChild(name);
+
+    const idEl = document.createElement('div');
+    idEl.className = 'item-id';
+    idEl.textContent = copyId;
+    card.appendChild(idEl);
+
+    if (item.custom) {
+      const itemCats = Array.isArray(item.cat) ? item.cat : [item.cat];
+      const extraCats = itemCats.filter(c => c !== 'Custom');
+      if (extraCats.length > 0) {
+        const tagsWrap = document.createElement('div');
+        tagsWrap.className = 'item-cat-tags';
+        extraCats.forEach(c => {
+          const tag = document.createElement('span');
+          tag.className = 'item-cat-tag';
+          tag.textContent = c;
+          tagsWrap.appendChild(tag);
+        });
+        card.appendChild(tagsWrap);
+      }
+    }
+
+    const flash = document.createElement('div');
+    flash.className = 'copy-flash';
+    flash.textContent = 'Kopiert!';
+    card.appendChild(flash);
+
+    card.addEventListener('click', () => {
+      navigator.clipboard.writeText(copyId).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = copyId;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      });
+      card.classList.add('copied');
+      setTimeout(() => card.classList.remove('copied'), 700);
+      showToast(copyId);
+    });
+
+    return card;
+  }
+
+  function render() {
+    const q   = searchInput.value.toLowerCase().trim();
+    const cat = catFilter.value;
+
+    const filtered = allItems.filter(item => {
+      if (onlyCustom && !item.custom) return false;
+      if (cat) {
+        const itemCats = Array.isArray(item.cat) ? item.cat : [item.cat];
+        if (!itemCats.includes(cat)) return false;
+      }
+      if (q) {
+        const fullId = item.custom ? item.id : `minecraft:${item.id}`;
+        return item.name.toLowerCase().includes(q) || fullId.includes(q);
+      }
+      return true;
+    });
+
+    grid.innerHTML = '';
+
+    if (filtered.length === 0) {
+      const msg = document.createElement('div');
+      msg.className = 'no-results';
+      msg.textContent = 'Keine Items gefunden.';
+      grid.appendChild(msg);
+    } else {
+      filtered.forEach(item => grid.appendChild(buildCard(item)));
+    }
+
+    const vanilla = filtered.filter(i => !i.custom).length;
+    const custom  = filtered.filter(i => i.custom).length;
+    statsEl.innerHTML = `<span>${filtered.length}</span> Items &nbsp;&middot;&nbsp; ${vanilla} Vanilla &nbsp;&middot;&nbsp; <span>${custom}</span> Custom`;
+  }
+
+  function showToast(id) {
+    clearTimeout(toastTimer);
+    toast.textContent = id;
+    toast.classList.add('show');
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+  }
+
+  searchInput.addEventListener('input', render);
+  catFilter.addEventListener('change', render);
+  toggleBtn.addEventListener('click', () => {
+    onlyCustom = !onlyCustom;
+    toggleBtn.classList.toggle('active', onlyCustom);
+    render();
+  });
+
+  loadItems();
+</script>
+
+</body>
+</html>

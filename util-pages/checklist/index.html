@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checklist</title>
+    <link href="checklist.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+<header>
+    <div class="logo">// checklist</div>
+    <div class="header-actions">
+        <button class="btn-icon" onclick="importTodos()">↑ Import</button>
+        <button class="btn-icon" onclick="exportTodos()">↓ Export</button>
+    </div>
+</header>
+
+<main>
+    <!-- Add Row -->
+    <div class="add-row" id="add-row">
+        <button class="add-btn" onclick="addTask()" title="Add Task">+</button>
+        <input class="add-task-input" id="task-name" type="text" placeholder="Task…" maxlength="80"
+               onkeydown="if(event.key==='Enter')addTask()">
+        <span class="sep">[</span>
+        <input class="add-amount-input" id="task-amount" type="number" min="1" max="9999" placeholder="1"
+               onkeydown="if(event.key==='Enter')addTask()">
+        <span class="sep">]</span>
+        <button class="add-confirm" onclick="addTask()">ADD</button>
+    </div>
+    <div class="hint">+ [Task] [Amount] → Press 'Enter' or 'ADD'</div>
+
+    <!-- Active tasks -->
+    <div id="active-list" class="task-list"></div>
+
+    <!-- Done tasks -->
+    <div id="done-section" style="display:none">
+        <div class="section-label">✓ Finished</div>
+        <div id="done-list" class="task-list"></div>
+    </div>
+</main>
+
+<div class="toast" id="toast"></div>
+<input type="file" id="file-input" accept=".json,.yml,.yaml,.txt" onchange="handleImport(event)">
+
+<script>
+    // ── State ──────────────────────────────────────────────────────────────
+    const STORAGE_KEY = 'checklist_v2';
+
+    function loadTodos() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            return raw ? JSON.parse(raw) : [];
+        } catch { return []; }
+    }
+
+    function saveTodos(todos) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+    }
+
+    let todos = loadTodos();
+
+    // ── Render ─────────────────────────────────────────────────────────────
+    function render() {
+        const active = todos.filter(t => t.current < t.amount);
+        const done   = todos.filter(t => t.current >= t.amount);
+
+        renderList('active-list', active);
+        renderList('done-list', done);
+
+        const doneSection = document.getElementById('done-section');
+        doneSection.style.display = done.length ? 'block' : 'none';
+
+        if (todos.length === 0) {
+            document.getElementById('active-list').innerHTML =
+                '<div class="empty">No tasks yet. Add one with +.</div>';
+        }
+    }
+
+    function renderList(containerId, items) {
+        const el = document.getElementById(containerId);
+        el.innerHTML = '';
+        items.forEach(t => {
+            const isDone = t.current >= t.amount;
+            const pct = Math.round((t.current / t.amount) * 100);
+
+            const div = document.createElement('div');
+            div.className = 'task-item' + (isDone ? ' done' : '');
+            div.dataset.id = t.id;
+
+            div.innerHTML = `
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="task-name" title="${esc(t.name)}">${esc(t.name)}</div>
+          <div class="task-progress">
+            <span class="cur">${t.current}</span>/${t.amount}
+          </div>
+          <button class="check-btn" onclick="tick('${t.id}')"
+            ${isDone ? 'disabled' : ''} title="Check">✓</button>
+          <button class="delete-btn" onclick="remove('${t.id}')" title="Delete">×</button>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" style="width:${pct}%"></div>
+        </div>
+      </div>
+    `;
+            el.appendChild(div);
+        });
+    }
+
+    function esc(str) {
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Actions ────────────────────────────────────────────────────────────
+    function addTask() {
+        const nameEl   = document.getElementById('task-name');
+        const amountEl = document.getElementById('task-amount');
+        const name     = nameEl.value.trim();
+        const amount   = parseInt(amountEl.value) || 1;
+
+        if (!name) { nameEl.focus(); return; }
+
+        todos.unshift({
+            id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+            name,
+            amount: Math.max(1, amount),
+            current: 0,
+            createdAt: new Date().toISOString()
+        });
+
+        nameEl.value   = '';
+        amountEl.value = '';
+        nameEl.focus();
+        saveTodos(todos);
+        render();
+    }
+
+    function tick(id) {
+        const t = todos.find(x => x.id === id);
+        if (!t || t.current >= t.amount) return;
+        t.current++;
+        if (t.current >= t.amount) toast(`"${t.name}" checked! ✓`);
+        saveTodos(todos);
+        render();
+    }
+
+    function remove(id) {
+        todos = todos.filter(x => x.id !== id);
+        saveTodos(todos);
+        render();
+    }
+
+    // ── Export ─────────────────────────────────────────────────────────────
+    function exportTodos() {
+        if (!todos.length) { toast('No tasks to export.'); return; }
+
+        const lines = [
+            '# Checklist Export',
+            `# Exported: ${new Date().toLocaleString('de-DE')}`,
+            `# Total: ${todos.length} tasks`,
+            '',
+            ...todos.map(t => {
+                const status = t.current >= t.amount ? '[DONE]' : `[${t.current}/${t.amount}]`;
+                return `${status} ${t.name}`;
+            })
+        ];
+
+        const yml = [
+            '# Checklist Export',
+            `exported: "${new Date().toISOString()}"`,
+            'tasks:',
+            ...todos.map(t => [
+                `  - name: "${t.name.replace(/"/g, '\\"')}"`,
+                `    amount: ${t.amount}`,
+                `    current: ${t.current}`,
+                `    done: ${t.current >= t.amount}`,
+                `    created: "${t.createdAt || ''}"`
+            ].join('\n'))
+        ].join('\n');
+
+        // Build zip manually (just pack as JSON, most universal)
+        const payload = {
+            exported: new Date().toISOString(),
+            version: 2,
+            tasks: todos
+        };
+
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        download(blob, `checklist-${datestamp()}.json`);
+        toast('Export saved!');
+    }
+
+    function datestamp() {
+        return new Date().toISOString().slice(0,10);
+    }
+
+    function download(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    // ── Import ─────────────────────────────────────────────────────────────
+    function importTodos() {
+        document.getElementById('file-input').click();
+    }
+
+    function handleImport(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        event.target.value = '';
+
+        const reader = new FileReader();
+        reader.onload = e => {
+            const text = e.target.result;
+            let imported = [];
+
+            try {
+                // Try JSON first
+                const obj = JSON.parse(text);
+                if (Array.isArray(obj)) {
+                    imported = obj.filter(t => t.name);
+                } else if (obj.tasks && Array.isArray(obj.tasks)) {
+                    imported = obj.tasks.filter(t => t.name);
+                }
+            } catch {
+                // Try YAML-ish line format: [DONE] Name  or  [cur/total] Name
+                const lines = text.split('\n');
+                for (const line of lines) {
+                    if (line.startsWith('#') || !line.trim()) continue;
+                    const m = line.match(/^\[(?:(DONE)|(\d+)\/(\d+))\]\s+(.+)/);
+                    if (m) {
+                        const name    = m[4].trim();
+                        const amount  = m[3] ? parseInt(m[3]) : 1;
+                        const current = m[1] === 'DONE' ? amount : parseInt(m[2]);
+                        imported.push({ id: uid(), name, amount, current, createdAt: new Date().toISOString() });
+                    }
+                }
+            }
+
+            if (!imported.length) { toast('No valid tasks found.'); return; }
+
+            // Merge: overwrite existing ids, add new
+            const existingIds = new Set(todos.map(t => t.id));
+            let added = 0, updated = 0;
+            for (const t of imported) {
+                if (!t.id) t.id = uid();
+                t.amount  = Math.max(1, parseInt(t.amount)  || 1);
+                t.current = Math.max(0, parseInt(t.current) || 0);
+                if (existingIds.has(t.id)) {
+                    const idx = todos.findIndex(x => x.id === t.id);
+                    todos[idx] = t; updated++;
+                } else {
+                    todos.push(t); added++;
+                }
+            }
+
+            saveTodos(todos);
+            render();
+            toast(`Import: ${added} new, ${updated} updated`);
+        };
+        reader.readAsText(file);
+    }
+
+    function uid() {
+        return Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+    }
+
+    // ── Toast ──────────────────────────────────────────────────────────────
+    let toastTimer;
+    function toast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+    }
+
+    // ── Init ───────────────────────────────────────────────────────────────
+    render();
+    document.getElementById('task-name').focus();
+</script>
+
+<footer>
+    Copyright &copy; 2026 Mr_Tesz. All rights reserved
+</footer>
+</body>
+</html>

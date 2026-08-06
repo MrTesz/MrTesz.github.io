@@ -1,0 +1,23 @@
+:root {
+    --background-color: #161621;
+    --default-text-color: #41416b;
+    --footer-color: #31314e;
+}
+
+.footer {
+    color: var(--footer-color);
+
+    position: absolute;
+
+    width: fit-content;
+    margin: auto;
+    left: 0;
+    right: 0;
+
+    bottom: 10px;
+}
+
+body {
+    background-color: var(--background-color);
+    color: var(--default-text-color);
+}

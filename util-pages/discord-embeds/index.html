@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Embed Editor</title>
+    <link href="discord-embeds.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<header>
+    <span class="logo">Embed Editor</span>
+    <div class="spacer"></div>
+    <button class="btn btn-ghost" onclick="openImport()">↓ Import</button>
+    <button class="btn btn-ghost" onclick="openExport('json')">↑ Export</button>
+    <button class="btn btn-ghost" onclick="openExport('cmd')" style="margin-left:4px">/command</button>
+    <button class="btn btn-danger-soft" onclick="resetAll()">↺ Reset</button>
+</header>
+
+<div class="workspace">
+    <aside class="sidebar">
+        <div class="msg-item active" id="msgNavItem" onclick="selectMsg()">
+            <span class="msg-item-icon">💬</span>
+            <span class="msg-item-label">Message</span>
+        </div>
+
+        <div style="padding: 6px 10px 2px; font-size:10px; font-weight:700; letter-spacing:0.08em; color:var(--text-dim); font-family:var(--font-mono),monospace; text-transform:uppercase;">Embeds</div>
+        <div class="embed-list" id="embedList"></div>
+
+        <div class="sidebar-footer">
+            <button class="btn-add" onclick="addEmbed()">＋ Embed hinzufügen</button>
+        </div>
+    </aside>
+
+    <main class="editor" id="editor">
+        <div class="empty-state" id="emptyState" style="display:none">
+            <p>Nichts ausgewählt</p>
+        </div>
+
+        <div id="msgEditor">
+            <div class="msg-section" id="msgSection">
+                <div class="msg-section-head" onclick="toggleSection('msgSection')">
+                    <span>💬 Nachricht</span>
+                    <span class="section-toggle">▾</span>
+                </div>
+                <div class="section-body">
+                    <div class="form-group">
+                        <label for="msgContent">Text</label>
+                        <textarea id="msgContent" placeholder="" style="min-height:90px" oninput="updateMsg(this.value)"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="editorContent" style="display:none; flex-direction:column; gap:10px;"></div>
+    </main>
+
+    <aside class="preview-panel">
+        <div class="preview-header">Discord Preview</div>
+        <div class="preview-scroll" id="previewScroll">
+            <div class="preview-empty" id="previewEmpty">Kein Inhalt</div>
+        </div>
+    </aside>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+        <h2 id="modalTitle">JSON</h2>
+        <label for="modalTextarea"></label>
+        <textarea id="modalTextarea" spellcheck="false"></textarea>
+        <div class="modal-footer">
+            <span class="modal-note" id="modalNote"></span>
+            <button class="btn btn-ghost" onclick="closeModal()">Schließen</button>
+            <button class="btn btn-primary" id="modalActionBtn"></button>
+        </div>
+    </div>
+</div>
+
+<script src="js/state.js"></script>
+<script src="js/sidebar.js"></script>
+<script src="js/editor.js"></script>
+<script src="js/preview.js"></script>
+<script src="js/io.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

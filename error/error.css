@@ -1,0 +1,55 @@
+:root {
+    --panel-background-color: #232b54;
+    --panel-title-text-color: #5959b3;
+    --panel-message-color: #5959b3;
+}
+
+.panel {
+    background-color: var(--panel-background-color);
+    position: absolute;
+    text-align: center;
+
+    width: fit-content;
+    height: fit-content;
+
+    margin: auto;
+    left: 0;
+    right: 0;
+    top: 45%;
+
+    border-radius: 100px;
+    padding: 15px 30px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.title {
+    font-size: 3rem;
+    width: 100%;
+    color: var(--panel-title-text-color);
+}
+.title-red {
+    color: #9c0000;
+}
+
+.message {
+    font-size: 1.2rem;
+    font-size: 1.5rem;
+    color: var(--panel-message-color);
+}
+
+.action-button {
+    position: absolute;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border-style: none;
+    bottom: 34%;
+    margin: auto;
+    left: 0;
+    right: 0;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}

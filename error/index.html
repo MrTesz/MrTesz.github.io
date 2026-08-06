@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" charset="UTF-8">
+    <meta name="description" content="Mr_Tesz - Error">
+    <meta name="author" content="Mr_Tesz">
+
+    <link rel="stylesheet" href="/errorb/error/error.css">
+    <link rel="stylesheet" href="/global/global.css">
+
+    <title>Mr_Tesz - Error</title>
+</head>
+
+<body>
+    <div class="panel">
+        <b class="title" id="title">Fehler</b>
+        <br>
+        <div class="message" id="message">Diese Seite existiert nicht.</div>
+    </div>
+
+    <div class="action-button" id="action-button">
+        <img src="/assets/assets/home.png" alt="Zurück">
+    </div>
+</body>
+
+<footer id="footer-container"></footer>
+
+<script type="module">
+    import init from "/error/error.js"
+    init(document);
+</script>
+<script type="module">
+    const messagesMap = {
+        noInternet: {
+            title: 'You are <span class="title-red">offline</span>.',
+            message: 'Please check your Wi-Fi connection.',
+            actionButton: '<img src="/assets/assets/refresh.png" alt="Refresh">'
+        },
+        403: {
+            title: '<span class="title-red">Forbidden</span>.',
+            message: 'You don\'t have the permission to view this page.',
+            actionButton: '<img src="/assets/assets/home.png" alt="Home">'
+        },
+        404: {
+            title: 'This page <span class="title-red">doesn\'t exist</span>.',
+            message: '',
+            actionButton: '<img src="/assets/assets/home.png" alt="Home">'
+        },
+        500: {
+            title: '<span class="title-red">Internal Server Error</span>.',
+            message: '',
+            actionButton: '<img src="/assets/assets/home.png" alt="Home">'
+        }
+    }
+
+    const params = new URLSearchParams(location.search);
+    const reason = __reason ?? params.get('e');
+    const msg = messagesMap[reason] ?? {
+        title: 'This page <span class="title-red">doesn\'t exist</span>.',
+        message: '',
+        actionButton: '<img src="/assets/assets/home.png" alt="Home">'
+    };
+
+    const title = document.getElementById('title');
+    title.innerHTML = msg.title;
+
+    const message = document.getElementById('message');
+    message.innerHTML = msg.message;
+
+    const actionButton = document.getElementById('action-button');
+    actionButton.innerHTML = msg.actionButton;
+</script>
+</html>

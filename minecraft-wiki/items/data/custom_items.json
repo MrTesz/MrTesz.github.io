@@ -1,0 +1,23 @@
+[
+  {
+    "id": "itemsadder:_iainternal:icon_left_blue",
+    "name": "Zurück Blau",
+    "cat": ["Custom", "GUI", "Pfeil"],
+    "imageUrl": "textures/icon_left_blue.png",
+    "emoji": "⬅️"
+  },
+  {
+    "id": "itemsadder:_iainternal:icon_right_blue",
+    "name": "Weiter Blau",
+    "cat": ["Custom", "GUI", "Pfeil"],
+    "imageUrl": "textures/icon_right_blue.png",
+    "emoji": "➡️"
+  },
+  {
+    "id": "itemsadder:_iainternal:icon_cancel",
+    "name": "Abbrechen",
+    "cat": ["Custom", "GUI"],
+    "imageUrl": "textures/icon_cancel.png",
+    "emoji": "❌"
+  }
+]
