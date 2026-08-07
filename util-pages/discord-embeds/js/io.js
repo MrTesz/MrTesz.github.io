@@ -47,8 +47,20 @@ function doImport() {
     try {
         const raw = document.getElementById('modalTextarea').value.trim();
         const parsed = JSON.parse(raw);
-        const arr = Array.isArray(parsed) ? parsed : [parsed];
-        const imported = arr.map(r => ({
+
+        let arr;
+        if (parsed.embeds) arr = Array.isArray(parsed.embeds) ? parsed.embeds : [parsed.embeds];
+        else arr = Array.isArray(parsed) ? parsed : [parsed];
+
+        if (parsed.content) msgContent = parsed.content;
+        if (parsed.buttons) buttons = parsed.buttons.map(b => ({
+            id: b.id || '',
+            label: b.label || '',
+            style: b.style || 1,
+            url: b.url || ''
+        }));
+
+        embeds = arr.map(r => ({
             id: genId(),
             title: r.title || '',
             description: r.description || '',
@@ -60,16 +72,37 @@ function doImport() {
             footerText: r.footerText || '',
             imageUrl: r.imageUrl || '',
             fieldsJson: (r.fieldsJson || []).map(fj => {
-                if (typeof fj === 'string') { try { return JSON.parse(fj); } catch { return { name:'', value:'', inline:false }; } }
-                return { name: fj.name||'', value: fj.value||'', inline: !!fj.inline };
+                if (typeof fj === 'string') {
+                    try {
+                        return JSON.parse(fj);
+                    } catch {
+                        return {name: '', value: '', inline: false};
+                    }
+                }
+                return {name: fj.name || '', value: fj.value || '', inline: !!fj.inline};
             })
         }));
-        embeds = [...embeds, ...imported];
+
         selectEmbed(embeds.length - 1);
         closeModal();
-
         saveState();
+        renderAll();
     } catch(err) { alert('Ungültiges JSON: ' + err.message); }
+}
+
+function downloadJson() {
+    const json = serializeToJson();
+    const blob = new Blob([json], { type: 'application/json' });
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'embed.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    URL.revokeObjectURL(url);
 }
 
 function serializeToJson() {
