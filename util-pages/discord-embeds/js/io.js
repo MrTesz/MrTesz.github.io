@@ -1,6 +1,6 @@
 function openExport(mode) {
     if (mode === 'cmd') {
-        const json = serializeToJson();
+        const json = serializeToJson(false);
         const cmd = `/embed-create json:${json}`;
 
         document.getElementById('modalTitle').textContent = 'Command Export';
@@ -10,7 +10,7 @@ function openExport(mode) {
         document.getElementById('modalActionBtn').textContent = 'Kopieren';
         document.getElementById('modalActionBtn').onclick = copyModal;
     } else {
-        const json = serializeToJson();
+        const json = serializeToJson(false);
 
         document.getElementById('modalTitle').textContent = 'JSON Export';
         document.getElementById('modalNote').textContent = 'Für /embed-create';
@@ -91,7 +91,7 @@ function doImport() {
 }
 
 function downloadJson() {
-    const json = serializeToJson();
+    const json = serializeToJson(true);
     const blob = new Blob([json], { type: 'application/json' });
 
     const url = URL.createObjectURL(blob);
@@ -105,7 +105,7 @@ function downloadJson() {
     URL.revokeObjectURL(url);
 }
 
-function serializeToJson() {
+function serializeToJson(prettyPrinting) {
     const output = embeds.map(e => ({
         fieldsJson: e.fieldsJson.map(f => JSON.stringify({ name: f.name, value: f.value, inline: f.inline })),
         description: e.description || null,
@@ -126,8 +126,8 @@ function serializeToJson() {
 
     const result = {};
     if (msgContent.trim()) result.content = msgContent;
-    if (output.length > 0) result.embeds = output.length === 1 ? output[0] : output;
+    if (output.length > 0) result.embeds = output;
     if (serializedButtons.length > 0) result.buttons = serializedButtons;
 
-    return JSON.stringify(result, null, 2);
+    return prettyPrinting ? JSON.stringify(result, null, 2) : JSON.stringify(result, null);
 }
